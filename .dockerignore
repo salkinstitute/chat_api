@@ -1,0 +1,13 @@
+.env
+.git/
+.gitignore
+.vscode/
+LICENSE
+README.md
+certs/
+planning.md
+*.md
+docker-compose.yml
+traefik.toml
+traefik_dynamic.toml
+mongodb/

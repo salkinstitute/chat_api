@@ -1,0 +1,7 @@
+
+# Keeping this in this file makes certs work for all
+[tls.stores]
+  [tls.stores.default]
+    [tls.stores.default.defaultCertificate]
+      certFile = '{{env "CERT_PATH"}}'
+      keyFile = '{{env "CERT_KEY_PATH"}}'
