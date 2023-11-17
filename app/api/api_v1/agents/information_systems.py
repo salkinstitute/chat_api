@@ -77,6 +77,7 @@ async def add_source(
     ai_agent: str,
     file_type: str,
     file_link: str,
+    created_by:str,
     title: str | None = None,
     sparse_summary: str | None = None,
     recursive_scraping: bool | None = True
@@ -97,6 +98,7 @@ async def add_source(
             file_link=file_link,
             file_type=file_type,
             ai_agent=ai_agent,
+            created_by=created_by,
             title=title,
             sparse_summary=sparse_summary,
             s3_key=s3_key,

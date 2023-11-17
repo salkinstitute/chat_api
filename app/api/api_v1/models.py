@@ -37,7 +37,7 @@ class Datasource(BaseModel):
         description="UTC updated time", default=None
     )
     created_by: Union[str, None] = Field(
-        description="username of creator", default=None
+        description="The username who requested to have the source added", default=None
     )
     updated_by: Union[str, None] = Field(
         description="username of updator", default=None

@@ -25,6 +25,8 @@ from langchain.document_loaders import Docx2txtLoader
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
+# scraping
+from bs4 import BeautifulSoup as Soup
 
 """ Locations """
 temp_downloads_path = "/app/app/temp_downloads"
@@ -121,7 +123,8 @@ async def load_file(
 
     # Helps keep track of if any cleanup needs to happen
     local_file_link = False
-
+    # get rid of trailing slash, messes up naming.
+    file_link = file_link.rstrip('/')
     try:
         # choose the loader based on the file_type
         match file_type.lower():
@@ -165,8 +168,11 @@ async def load_file(
                 loader = Docx2txtLoader(file_link)
             case "website" | "html":
                 if recursive_scraping:
-                    
-                    loader = RecursiveUrlLoader(url=file_link)
+                    # loader = RecursiveUrlLoader(url=file_link)
+                    print("_________________________DOING A RECURSIVE SCRAPE___________________________")
+                    loader = RecursiveUrlLoader(
+                        url=file_link, max_depth=5, extractor=lambda x: Soup(x, "html.parser").text
+                    )
                     
                 else:
                     loader = AsyncHtmlLoader([file_link])
