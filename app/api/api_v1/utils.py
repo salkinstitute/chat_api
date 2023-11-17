@@ -192,8 +192,8 @@ async def load_file(
 
         # Continue
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=100,
+            chunk_size=256,
+            chunk_overlap=48,
             length_function=len,
             add_start_index=True,
         )
@@ -273,7 +273,8 @@ async def search_pinecone(
     embed_model_id: str = "text-embedding-ada-002",
     top_k: int = 5,
     texts_only: bool = False,
-) -> list:
+    metadata_filter:dict | None = None
+):
     # create query embedding
 
     client = OpenAI()
@@ -282,12 +283,16 @@ async def search_pinecone(
 
     xq = client.embeddings.create(input=[query], model=embed_model_id).data[0].embedding
 
+    if metadata_filter is not None:
+        metadata_filter = {}
+        
     res = get_pinecone_index().query(
         xq,
         top_k=top_k,
         include_metadata=True,
         # namespace=os.environ["PINECONE_NAMESPACE"],
         # filter={"source": {"$in": [p for p in sources]}}, not searchign on metadata right now
+        filter=metadata_filter
     )
     if texts_only:
         contexts = [x["metadata"]["text"] for x in res["matches"]]

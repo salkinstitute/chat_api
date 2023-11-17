@@ -1,7 +1,7 @@
 # Libary Modules needed for this script: slack_bolt, os, json, llama_index, openai
 from pydantic import BaseModel, Field
 from pprint import pprint
-from typing import Type, Any
+from typing import Annotated, Type, Any, List
 
 
 # APP related
@@ -49,11 +49,95 @@ from langchain_experimental.agents.agent_toolkits import (
 ai_agent_name = "Information Systems"
 
 
-async def rag(query: str, texts_only: bool = False) -> str | None:
-    """Useful for finding information in a previously saved source.  Uses parameter 'query':str which should be the ENTIRE question from the user.
-    Returns a string of context from the context source or None. When using the texts_only = Fals parameter, the response will be in JSON and the metadata score that is highest is the most likely answer so favor the text from that result"""
+class MetadataFilters(BaseModel):
+    """Filters used by the vectorstore (Pinecone) to search on metadata."""
 
-    context = await search_pinecone(query=query, top_k=3, texts_only=texts_only)
+    file_link: List[str] | None = Field(
+        description="Source file_link that the data came.  This field can be used to match against when comparing to the 'file_link' property in the Datasource (returned from the list_sources_tool)",
+        default=None,
+    )
+    before_indexed_datetime_utc: str | None = Field(
+        description="The datetime in UTC format when the data was added to the VectorStore. This field can be used to only return data that was added before a specific time period. Use a standard mongo style query to construct the condition",
+        default=None,
+    )
+    after_indexed_datetime_utc: str | None = Field(
+        description="The datetime in UTC format when the data was added to the VectorStore. This field can be used to only return data that was added after a specific time period. Use a standard mongo style query to construct the condition",
+        default=None,
+    )
+    original_file_type: List[str] | None = Field(
+        description="The original file type(s). ", default=None
+    )
+    filter_operator: str | None = Field(
+        description="The mongo style logical operator used to combine multiple filters. Use $or to match any filter or $and to match all filters.",
+        default="$or",
+    )
+
+
+class RagArgs(MetadataFilters):
+    query: str = Field(
+        description="The text content, or meaning content, to search for in the VectorStore of previously saved datasources."
+    )
+    texts_only: bool | None = Field(
+        description="Use False to get the full VectorStore response in JSON which includes the metadata scores (The highest is the most likely answer so favor the text from that resul).  Use True to only get the texts from the VectorStore",
+        default=False,
+    )
+
+
+async def construct_metadata_filter(
+    mdf: MetadataFilters, operator: str = "$or"
+) -> dict:
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>TRYING TO CONSTRUCT A META FILTER")
+    filters = []
+    filter = {}
+    for key, value in mdf.model_dump().items():
+        pprint(f"{key}:{value}")
+        match str(key):
+            case "file_link":
+                if value is not None:
+                    filters.append({"source": {"$in": [s for s in value]}})
+            case "before_indexed_datetime_utc":
+                if value is not None:
+                    filters.append({"indexed_datetime_utc": {"$gt": value}})
+            case "after_indexed_datetime_utc":
+                if value is not None:
+                    filters.append({"indexed_datetime_utc": {"$lt": value}})
+            case "original_file_type":
+                if value is not None:
+                    filters.append({"original_file_type": {"$in": [s for s in value]}})
+
+    if len(filters) > 1:
+        filter = {operator: [f for f in filters]}
+    elif len(filters) == 1:
+        filter = filters[0]
+
+    pprint(f"HERE R THE FILTERS {filters}")
+    return filter
+
+
+async def rag(
+    query: str,
+    file_link: List[str] | None = None,
+    before_indexed_datetime_utc: str | None = None,
+    after_indexed_datetime_utc: str | None = None,
+    original_file_type: List[str] | None = None,
+    texts_only: bool = False,
+    filter_operator: str | None = "$or",
+) -> str | None:
+    """Useful for finding information in a previously saved source. Returns either a list of JSON objects or just texts depending on usage of the texts_only argument."""
+
+    mf = {}
+    m = MetadataFilters(
+        file_link=file_link,
+        before_indexed_datetime_utc=before_indexed_datetime_utc,
+        after_indexed_datetime_utc=after_indexed_datetime_utc,
+        original_file_type=original_file_type,
+    )
+    mf = await construct_metadata_filter(mdf=m, operator=filter_operator)
+    print(f"@@@@@@@@@@@@@@@@@@@@Using this metadata filter {mf}")
+
+    context = await search_pinecone(
+        query=query, top_k=3, texts_only=texts_only, metadata_filter=mf
+    )
     print(">>>>>>>>>>>>>>>>>> HERE IS THE RETURNED RAG CONTEXT <<<<<<<<<<<<<<<<<<<<<<")
     pprint(context)
 
@@ -67,20 +151,21 @@ def pandas_agent(csv_path: str, question: str) -> Any:
 
     llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.0)
     # Show the intermediate steps because this agent sometimes doesn't put the full answer in the final answer.
-    agent = create_pandas_dataframe_agent(llm, df=df, verbose=True, return_intermediate_steps=True)
+    agent = create_pandas_dataframe_agent(
+        llm, df=df, verbose=True, return_intermediate_steps=True
+    )
 
     return agent(question)
-
 
 
 async def add_source(
     ai_agent: str,
     file_type: str,
     file_link: str,
-    created_by:str,
+    created_by: str,
     title: str | None = None,
     sparse_summary: str | None = None,
-    recursive_scraping: bool | None = True
+    recursive_scraping: bool | None = True,
 ) -> str | bool:
     """Useful when a user wishes to add a data source. Make sure to create a title and a sparse summary for the user if they don't provide one. If the link goes to an html page or website, you should ask the uer if the want to do 'Recursive Scraping' or just scrape that one page"""
     # metadata for the vectorstore
@@ -90,7 +175,10 @@ async def add_source(
         meta.append({"title": title})
     # load the file in the vectorstore and backup to s3
     s3_key = await load_file(
-        file_type=file_type, file_link=file_link, metadata_to_save=meta, recursive_scraping=recursive_scraping
+        file_type=file_type,
+        file_link=file_link,
+        metadata_to_save=meta,
+        recursive_scraping=recursive_scraping,
     )
     if s3_key:
         # file loaded, now add to the datasource collection in mongo
@@ -120,11 +208,11 @@ async def list_sources() -> list[Datasource] | None:
 
 
 async def agent(payload: UserMessage):
-    
     llm = ChatOpenAI(model="gpt-4-1106-preview")
 
     rag_tool = StructuredTool.from_function(rag)
     rag_tool.coroutine = rag
+    rag_tool.args_schema = RagArgs
 
     add_source_tool = StructuredTool.from_function(add_source)
     add_source_tool.coroutine = add_source
