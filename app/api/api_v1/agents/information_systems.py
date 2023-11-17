@@ -49,9 +49,9 @@ from langchain_experimental.agents.agent_toolkits import (
 ai_agent_name = "Information Systems"
 
 
-async def rag(query: str, texts_only: bool = True) -> str | None:
-    """Useful as a first step in finding semantically matching and existing context to answer a question from a user.  Uses parameter 'query':str which should be the ENTIRE question from the user.
-    Returns a string of context from the context source or None."""
+async def rag(query: str, texts_only: bool = False) -> str | None:
+    """Useful for finding information in a previously saved source.  Uses parameter 'query':str which should be the ENTIRE question from the user.
+    Returns a string of context from the context source or None. When using the texts_only = Fals parameter, the response will be in JSON and the metadata score that is highest is the most likely answer so favor the text from that result"""
 
     context = await search_pinecone(query=query, top_k=3, texts_only=texts_only)
     print(">>>>>>>>>>>>>>>>>> HERE IS THE RETURNED RAG CONTEXT <<<<<<<<<<<<<<<<<<<<<<")
@@ -66,10 +66,11 @@ def pandas_agent(csv_path: str, question: str) -> Any:
     df = pd.read_csv(csv_path)
 
     llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0.0)
-
-    agent = create_pandas_dataframe_agent(llm, df=df, verbose=True)
+    # Show the intermediate steps because this agent sometimes doesn't put the full answer in the final answer.
+    agent = create_pandas_dataframe_agent(llm, df=df, verbose=True, return_intermediate_steps=True)
 
     return agent(question)
+
 
 
 async def add_source(
@@ -78,8 +79,9 @@ async def add_source(
     file_link: str,
     title: str | None = None,
     sparse_summary: str | None = None,
-) -> bool:
-    """Useful when a user wishes to add a data source. Make sure to create a title and a sparse summary for the user if they don't provide one."""
+    recursive_scraping: bool | None = True
+) -> str | bool:
+    """Useful when a user wishes to add a data source. Make sure to create a title and a sparse summary for the user if they don't provide one. If the link goes to an html page or website, you should ask the uer if the want to do 'Recursive Scraping' or just scrape that one page"""
     # metadata for the vectorstore
     meta = []
     ai_agent = ai_agent_name
@@ -87,9 +89,9 @@ async def add_source(
         meta.append({"title": title})
     # load the file in the vectorstore and backup to s3
     s3_key = await load_file(
-        file_type=file_type, file_link=file_link, metadata_to_save=meta
+        file_type=file_type, file_link=file_link, metadata_to_save=meta, recursive_scraping=recursive_scraping
     )
-    if l:
+    if s3_key:
         # file loaded, now add to the datasource collection in mongo
         ds = Datasource(
             file_link=file_link,
@@ -101,11 +103,11 @@ async def add_source(
         )
         new_ds = await upsert_datasource(ds)
 
-    return l
+    return s3_key
 
 
 async def list_sources() -> list[Datasource] | None:
-    """Useful for getting a list of all the currently saved data sources that the you have access to."""
+    """Useful for getting a list of all the currently saved data sources that the you have access to. Use the rag tool to get information within these sources"""
     print("RUNNING LIST SOURCES")
     r = await retrieve_agent_datasources(agent=ai_agent_name)
     pprint(r)
@@ -116,12 +118,8 @@ async def list_sources() -> list[Datasource] | None:
 
 
 async def agent(payload: UserMessage):
-    print(f"HERE ARE THE INCOMING PARAMETERS {payload.username}")
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo-1106"
-    )  # fast and cheap, but not good with functions
-    # llm = ChatOpenAI(model="gpt-4") # slow, but best results
-    # llm = ChatOpenAI(model="gpt-4-1106-preview", temperature="1") # fast but not available to us until next month
+    
+    llm = ChatOpenAI(model="gpt-4-1106-preview")
 
     rag_tool = StructuredTool.from_function(rag)
     rag_tool.coroutine = rag
@@ -142,7 +140,7 @@ async def agent(payload: UserMessage):
         You are an ambitious and friendly genius named Salkie, internally your ai_agent name is {ai_agent_name}. You have degrees in Information Systems, Business Administration, Logic, Liberal Arts, Law and Computer Science. You have the amazing ability to read JSON data and make sense of it easily.  You are presently working for a high ranking employee at the Salk Institute who's username is {payload.username}, you help them answer and plan their next action for any questions, challenges or research they are doing.
         If using the rag tool always use the ENTIRE question from the user for the query parameter.
         For any tool you want to use, make sure you have values for all of the tool's requied parameters, otherwise don't use that tool.
-        You love to respond in Markdown syntax with uniquely cited sources at the end. You will use as many tools as needed to answer the user's question.  You will be rewarded for taking some extra steps to find ALL the information requested from the user.
+        You love to respond in Markdown syntax and always with uniquely cited sources (as clickable links) at the end. You will use as many tools as needed to answer the user's question.  You will be rewarded for taking some extra steps to find ALL the information requested from the user.
     """
 
     existing_messages = await retrieve_chat_history(
@@ -203,7 +201,7 @@ async def agent(payload: UserMessage):
     return {
         "username": payload.username,
         "context": payload.context,
-        "contextType": "bill_id",
+        "contextType": payload.contextType,
         "message": a["output"],
         "sources": [],
     }

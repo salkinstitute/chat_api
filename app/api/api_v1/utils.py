@@ -24,6 +24,7 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders import Docx2txtLoader
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
+from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
 """ Locations """
 temp_downloads_path = "/app/app/temp_downloads"
@@ -102,11 +103,14 @@ def download_file_to_s3(
 
 
 # metadata_to_save is a list of dicts with key value pairs of desired metadata to save.
+# need to update to use https://python.langchain.com/docs/integrations/document_loaders/recursive_url
+# for websites
 async def load_file(
     file_type: str,
     file_link: str,
     metadata_to_save: list[dict],
     parser_args: dict | None = None,
+    recursive_scraping: bool | None = True
 ) -> Union[str, bool]:
     """Loads file into Pinecone and/or Mongo as well as saving the original file to S3"""
     # Always put some basics in the meta for more restrictive searches
@@ -160,7 +164,12 @@ async def load_file(
                 # https://python.langchain.com/docs/integrations/document_loaders/microsoft_word
                 loader = Docx2txtLoader(file_link)
             case "website" | "html":
-                loader = AsyncHtmlLoader([file_link])
+                if recursive_scraping:
+                    
+                    loader = RecursiveUrlLoader(url=file_link)
+                    
+                else:
+                    loader = AsyncHtmlLoader([file_link])
 
             case _:  # default
                 raise ValueError(f"The file_type {file_type} is not yet suported bro!")
