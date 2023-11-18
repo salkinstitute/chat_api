@@ -21,10 +21,13 @@ Things are moving very fast with AI and it's potential keeps expanding.  This is
 ### Installation
 1. Install [Mkcert](https://github.com/FiloSottile/mkcert)
 2. Add host entries
-for Mac/*nix `sudo vi /etc/hosts` 
-and add a line at the end with all services in the stack:
+    
 ```
+    #for Mac and *nix
+    sudo vi /etc/hosts
+    # Add a line at the end of your hosts file with all services in the stack:
     127.0.0.1    chat-api.local, traefik.chat-api.local, mex.chat-api.local
+
 ```
 
 4. Clone `git clone https://github.com/salkinstitute/chat_api.git && cd chat_api`
