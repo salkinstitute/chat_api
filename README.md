@@ -24,4 +24,4 @@ Things are moving very fast with AI and it's potential keeps expanding.  This is
 ### Deployment
 Not there yet, but getting close 
 (will be using EC2)
-Need to get auth based security setup first
+
