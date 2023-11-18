@@ -31,7 +31,8 @@ Things are moving very fast with AI and it's potential keeps expanding.  This is
 ```
 
 4. Clone `git clone https://github.com/salkinstitute/chat_api.git && cd chat_api`
-5. Make sure Docker is installed and running then `docker-compose up`
+5. Create your .env file from the example and update the values `cp example.env .env`
+6. Make sure Docker is installed and running then `docker-compose up`
    
 ### Deployment
 Not there yet, but getting close 
