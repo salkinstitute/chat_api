@@ -19,7 +19,7 @@ Things are moving very fast with AI and it's potential keeps expanding.  This is
     
     
 ### Installation
-1. Install [Mkcert](https://github.com/FiloSottile/mkcert)
+1. Install [Mkcert](https://github.com/FiloSottile/mkcert) and drop the certs in the certs/dev folder (replace what's there) updated the names of the certs in the traefik section of the docker-compose file if the certs have a different name.
 2. Add host entries
     
 ```
