@@ -14,6 +14,7 @@ Things are moving very fast with AI and it's potential keeps expanding.  This is
     - Mongo Express, FastAPI, Slackbot and Traefik edge routing all configured in this stack.
     - Separate AI Agents for each business unit - allows for independent personas, expense tracking and tuning.
     
+    
 ### Installation
     - Stub for instructions on Docker and hosts file (w/Mkcert) setup
 
