@@ -1,8 +1,6 @@
-# Libary Modules needed for this script: slack_bolt, os, json, llama_index, openai
 from pydantic import BaseModel, Field
 from pprint import pprint
 from typing import Annotated, Type, Any, List
-
 
 # APP related
 from app.api.api_v1.models import (
@@ -40,9 +38,6 @@ from langchain_experimental.agents.agent_toolkits import (
     create_pandas_dataframe_agent,
 )
 
-# import nest_asyncio
-
-# nest_asyncio.apply()
 
 """" AGENT TOOLS """
 
@@ -86,7 +81,6 @@ class RagArgs(MetadataFilters):
 async def construct_metadata_filter(
     mdf: MetadataFilters, operator: str = "$or"
 ) -> dict:
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>TRYING TO CONSTRUCT A META FILTER")
     filters = []
     filter = {}
     for key, value in mdf.model_dump().items():
@@ -109,8 +103,6 @@ async def construct_metadata_filter(
         filter = {operator: [f for f in filters]}
     elif len(filters) == 1:
         filter = filters[0]
-
-    pprint(f"HERE R THE FILTERS {filters}")
     return filter
 
 
@@ -133,13 +125,10 @@ async def rag(
         original_file_type=original_file_type,
     )
     mf = await construct_metadata_filter(mdf=m, operator=filter_operator)
-    print(f"@@@@@@@@@@@@@@@@@@@@Using this metadata filter {mf}")
 
     context = await search_pinecone(
         query=query, top_k=3, texts_only=texts_only, metadata_filter=mf
     )
-    print(">>>>>>>>>>>>>>>>>> HERE IS THE RETURNED RAG CONTEXT <<<<<<<<<<<<<<<<<<<<<<")
-    pprint(context)
 
     return context
 
@@ -270,9 +259,6 @@ async def agent(payload: UserMessage):
 
     # Get the agent response object.
     a = await agent_executor.ainvoke({"input": payload.message})
-
-    # pprint(f">>>>>>>>>>Unformatted answer<<<<<<<<<<<<<<<<")
-    print(a)
 
     # append response and user question to history
     add_history_user_message = await insert_chat_history(
