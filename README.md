@@ -1,3 +1,6 @@
+# Chat API
+A flexible approach to integrating AI
+
 ## What
 This is a API built to provide AI Agent based on company data sources and system prompts who also has access to custom defined tools.
 The ingress and egress for the Agent is currently through a Slackbot and a REST API (FastAPI). 
