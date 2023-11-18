@@ -2,12 +2,13 @@
 A flexible approach to integrating AI
 
 ## What
-This is a API built to provide AI Agent based on company data sources and system prompts who also has access to custom defined tools.
+This is a API built to provide AI Agent based on company data (Using RAG with a Pinecone vectorestore) sources and system prompts who also has access to custom defined tools.
 The ingress and egress for the Agent is currently through a Slackbot and a REST API (FastAPI). 
 Full [roadmap](https://github.com/salkinstitute/chat_api/edit/main/planning.md) still being determined.
 
 ## Why
 Things are moving very fast with AI and it's potential keeps expanding.  This is a hands-on way to explore that potential and work directly with several different approaches with AI simultaneously until best practices are established.
+Alot of the solutions out there for RAG are good but missing key things (metadata filters, hyperparameter access, etc).  Even more leaky abstractions dealing with LLMs currently, at this point we need hands-on control for some functions and the ability to re-use what's settled in others, -it's a highly fluid environment.
 
 
 ### Features
