@@ -78,7 +78,7 @@ class RagArgs(MetadataFilters):
         description="The text content, or meaning content, to search for in the VectorStore of previously saved datasources."
     )
     texts_only: bool | None = Field(
-        description="Use False to get the full VectorStore response in JSON which includes the metadata scores (The highest is the most likely answer so favor the text from that resul).  Use True to only get the texts from the VectorStore",
+        description="Use False to get the full VectorStore response in JSON which includes the metadata Score (The highest is the most likely answer so favor the text from that resul).  Use True to only get the texts from the VectorStore",
         default=False,
     )
 

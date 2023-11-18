@@ -25,6 +25,7 @@ from langchain.document_loaders import Docx2txtLoader
 from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
+
 # scraping
 from bs4 import BeautifulSoup as Soup
 
@@ -112,7 +113,7 @@ async def load_file(
     file_link: str,
     metadata_to_save: list[dict],
     parser_args: dict | None = None,
-    recursive_scraping: bool | None = True
+    recursive_scraping: bool | None = True,
 ) -> Union[str, bool]:
     """Loads file into Pinecone and/or Mongo as well as saving the original file to S3"""
     # Always put some basics in the meta for more restrictive searches
@@ -124,7 +125,7 @@ async def load_file(
     # Helps keep track of if any cleanup needs to happen
     local_file_link = False
     # get rid of trailing slash, messes up naming.
-    file_link = file_link.rstrip('/')
+    file_link = file_link.rstrip("/")
     try:
         # choose the loader based on the file_type
         match file_type.lower():
@@ -169,11 +170,15 @@ async def load_file(
             case "website" | "html":
                 if recursive_scraping:
                     # loader = RecursiveUrlLoader(url=file_link)
-                    print("_________________________DOING A RECURSIVE SCRAPE___________________________")
-                    loader = RecursiveUrlLoader(
-                        url=file_link, max_depth=5, extractor=lambda x: Soup(x, "html.parser").text
+                    print(
+                        "_________________________DOING A RECURSIVE SCRAPE___________________________"
                     )
-                    
+                    loader = RecursiveUrlLoader(
+                        url=file_link,
+                        max_depth=5,
+                        extractor=lambda x: Soup(x, "html.parser").text,
+                    )
+
                 else:
                     loader = AsyncHtmlLoader([file_link])
 
@@ -271,9 +276,9 @@ def pinecone_doc_exists(doc_link: str) -> bool:
 async def search_pinecone(
     query: str,
     embed_model_id: str = "text-embedding-ada-002",
-    top_k: int = 5,
+    top_k: int = 3,
     texts_only: bool = False,
-    metadata_filter:dict | None = None
+    metadata_filter: dict | None = None,
 ):
     # create query embedding
 
@@ -285,20 +290,30 @@ async def search_pinecone(
 
     if metadata_filter is not None:
         metadata_filter = {}
-        
+
     res = get_pinecone_index().query(
         xq,
         top_k=top_k,
         include_metadata=True,
         # namespace=os.environ["PINECONE_NAMESPACE"],
-        # filter={"source": {"$in": [p for p in sources]}}, not searchign on metadata right now
-        filter=metadata_filter
+        filter=metadata_filter,
     )
-    if texts_only:
-        contexts = [x["metadata"]["text"] for x in res["matches"]]
-    else:
-        # pprint([m  for m in res['matches']])
-        # get list of retrieved texts
-        # contexts = [x['metadata']['text'] for x in res['matches']]
-        contexts = [x for x in res["matches"]]
-    return contexts
+    # if texts_only:
+    #     contexts = [x["metadata"]["text"] for x in res["matches"]]
+    # else:
+    #     # pprint([m  for m in res['matches']])
+    #     # get list of retrieved texts
+    #     # contexts = [x['metadata']['text'] for x in res['matches']]
+    #     contexts = [x for x in res["matches"]]
+
+    # .....need to run compression..... #
+    contexts = [x for x in res["matches"]]
+
+    formatted_contexts = f"\n{'-' * 100}\n".join(
+        [
+            f"Document {i+1} Score {d['score']} Source {d['metadata']['source']}:\n\n"
+            + d["metadata"]["text"]
+            for i, d in enumerate(contexts)
+        ]
+    )
+    return formatted_contexts
