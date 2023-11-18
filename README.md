@@ -8,7 +8,7 @@ Full [roadmap](https://github.com/salkinstitute/chat_api/edit/main/planning.md) 
 
 ## Why
 Things are moving very fast with AI and it's potential keeps expanding.  This is a hands-on way to explore that potential and work directly with several different approaches with AI simultaneously until best practices are established.
-Alot of the solutions out there for RAG are good but missing key things (metadata filters, hyperparameter access, etc).  Even more leaky abstractions dealing with LLMs currently, at this point we need hands-on control for some functions and the ability to re-use what's settled in others, -it's a highly fluid environment.
+Alot of the solutions out there for RAG are good(Embedd Chain) but missing key things (metadata filters, hyperparameter access, etc).  Even more leaky abstractions dealing with LLM Wrappers (LangChain / AutoGen) currently, at this point we need hands-on control for some functions and the ability to re-use what's settled in others, -it's a highly fluid environment.
 
 
 ### Features
