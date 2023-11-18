@@ -16,7 +16,7 @@ Alot of the solutions out there for RAG are good(Embedd Chain) but missing key t
 - Auto S3 and NoSQL (Mongo) retention / ingress of data
 - Chat request NLP functions that include data ingress, note taking, note recall
 - Mongo Express, FastAPI, Slackbot and Traefik edge routing all configured in this stack.
-- Separate AI Agents for each business unit - allows for independent personas, expense tracking and tuning.
+- Separate AI [Agents](app/api/api_v1/agents) for each business unit - allows for independent personas, expense tracking and tuning.
     
     
 ### Installation
