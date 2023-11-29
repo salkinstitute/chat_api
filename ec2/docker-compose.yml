@@ -68,7 +68,8 @@ services:
   #     - "traefik.http.routers.chat_api.rule=Host(`chat-api.local`)"
 
   slack_chat_api:
-    image: salk/chat_api:latest
+  # diff branch don't know why gh action won't allow push to latest
+    image: salk/chat_api:main
     restart: unless-stopped
 
 
