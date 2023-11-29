@@ -65,16 +65,10 @@ jobs:
           # SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           ARGS: "-rlgoDzvc -i --delete"
           SOURCE: "ec2"
-          # REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          # REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          # TARGET: ${{ secrets.REMOTE_TARGET }}
-          # EXCLUDE: "/dist/, /node_modules/"
-          # SCRIPT_BEFORE: |
-          #   echo "Running before rsync"
           # add this before the pull command if private repo.
           # docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}" docker.io
           SCRIPT_AFTER: |
-            cd ${{ secrets.REMOTE_TARGET }}
+            cd ${{ secrets.TARGET_DIR }}/ec2
             echo "${{ secrets.ENV_FILE }}" > .env
             docker-compose -f docker-compose.yml pull && docker-compose -f docker-compose.yml up --remove-orphans -d
             docker system prune --force
