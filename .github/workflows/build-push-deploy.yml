@@ -49,7 +49,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
   
   deploy_ec2:
-    # needs: push_to_registry
+    needs: push_to_registry
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
