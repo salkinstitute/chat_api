@@ -57,10 +57,10 @@ jobs:
       - name: Deploy to Server
         uses: easingthemes/ssh-deploy@main
         env:
-          SSH_PRIVATE_KEY: ${ { secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${ { secrets.HOST_DNS }}
-          REMOTE_USER: ${ { secrets.USERNAME }}
-          TARGET: ${ { secrets.TARGET_DIR }}
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR }}
         with:
           # SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           ARGS: "-rlgoDzvc -i --delete"
