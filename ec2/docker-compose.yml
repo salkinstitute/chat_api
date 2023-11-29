@@ -1,0 +1,137 @@
+version: "3.8"
+
+services:
+
+   # edge router for all services.
+  traefik:
+    image: traefik:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # - "443:443"
+      - "8080:8080"
+      - "9221:9229"
+ 
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+   
+    command:
+      - "--providers.docker=true"
+      - "--ping=true"
+      - "--ping.entryPoint=ping"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik_proxy"
+      - "--entryPoints.ping.address=:8081"
+      - "--entrypoints.http.address=:80"
+      # - "--entrypoints.https.address=:443"
+      # - "--entrypoints.https.http.tls.certresolver=letsencrypt"
+      # - "--entrypoints.https.http.tls.domains[0].main=c-space.us"
+      # - "--entrypoints.https.http.tls.domains[0].sans=api.c-space.us,chat.c-space.us,mex.c-space.us"
+      # - "--entrypoints.http.http.redirections.entryPoint.to=https"
+      # - "--entrypoints.http.http.redirections.entryPoint.scheme=https"
+      # - "--certificatesresolvers.letsencrypt.acme.dnsChallenge.delayBeforeCheck=15"
+      # - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=route53"
+      # - "--certificatesresolvers.letsencrypt.acme.email=tony@c-space.us"
+      # - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # - "--certificatesResolvers.letsencrypt.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53"
+
+
+
+
+  # chat_api:
+  #   restart: unless-stopped
+  #   image: salk/chat_api:latest
+  #   build:
+  #     context: ./
+  #     dockerfile: Dockerfile
+
+  #   volumes:
+  #     - ./:/app
+
+  #   expose:
+  #     - 8000
+  #   env_file:
+  #     - ./.env
+  #   working_dir: /app
+  
+  #   command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+  
+  #   depends_on:
+  #     - mongo
+  #     - traefik
+
+  #   labels:
+      
+  #     - "traefik.http.services.chat_api.loadbalancer.server.port=8000"
+  #     - "traefik.http.routers.chat_api.tls=true"
+  #     - "traefik.http.routers.chat_api.entrypoints=websecure"
+  #     - "traefik.http.routers.chat_api.rule=Host(`chat-api.local`)"
+
+  slack_chat_api:
+    image: salk/chat_api:latest
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+
+    volumes:
+      - ./:/app
+
+    expose:
+      - 8000
+    env_file:
+      - ./.env
+
+    working_dir: /app
+
+    command: "python -m app.slack.main"
+
+    depends_on:
+      - mongo
+      - traefik
+
+    # labels:
+      
+    #   - "traefik.http.services.slack_chat_api.loadbalancer.server.port=8000"
+    #   - "traefik.http.routers.slack_chat_api.tls=true"
+    #   - "traefik.http.routers.slack_chat_api.entrypoints=websecure"
+    #   - "traefik.http.routers.slack_chat_api.rule=Host(`slack.chat-api.local`)"
+
+
+  mongo:
+      image: docker.io/bitnami/mongodb:${MONGODB_VERSION:-6.0.6}
+      restart: unless-stopped
+      volumes:
+        - db-data:/bitnami/mongodb
+
+      environment:
+        MONGODB_REPLICA_SET_MODE: primary
+        MONGODB_REPLICA_SET_NAME: ${MONGODB_REPLICA_SET_NAME:-rs0}
+        MONGODB_PORT_NUMBER: ${MONGODB_PORT_NUMBER:-27017}
+        MONGODB_INITIAL_PRIMARY_HOST: ${MONGODB_INITIAL_PRIMARY_HOST:-mongo}
+        MONGODB_INITIAL_PRIMARY_PORT_NUMBER: ${MONGODB_INITIAL_PRIMARY_PORT_NUMBER:-27017}
+        MONGODB_ADVERTISED_HOSTNAME: ${MONGODB_ADVERTISED_HOSTNAME:-mongo}
+        MONGODB_ENABLE_JOURNAL: ${MONGODB_ENABLE_JOURNAL:-true}
+        ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-yes}
+
+  # mex:
+  #   image: mongo-express:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+  #     - ME_CONFIG_MONGODB_SERVER=mongo
+  #     - ME_CONFIG_BASICAUTH_USERNAME=${MONGOEXPRESS_LOGIN-mex}
+  #     - ME_CONFIG_BASICAUTH_PASSWORD=${MONGOEXPRESS_PASSWORD-Just4mex}
+  #   ports:
+  #     - "8081:8081"
+  #   depends_on:
+  #     - mongo
+  #     - traefik
+  #   labels:
+  #     - traefik.http.routers.mex.rule=Host(`mex.chat-api.salk.edu`)
+  #     - traefik.http.routers.mex.tls=true
+
+
+volumes:
+  db-data:
+  rc-data:

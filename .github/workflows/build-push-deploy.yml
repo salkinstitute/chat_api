@@ -7,7 +7,7 @@
 # To get a newer version, you will need to update the SHA.
 # You can also reference a tag or branch, but the action may change without warning.
 
-name: Publish Docker image
+name: Build, Push and Deploy
 
 # on:
 #   release:
@@ -36,8 +36,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-        # need to use variables here later
-          images: salk/chat_api
+        # need to set the vars as GH configuration variables 
+          images: ${{ vars.DOCKERHUB_NAMESPACE }}/${{ vars.DOCKERHUB_REPO }}
       
       - name: Build and push Docker image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
@@ -47,3 +47,29 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  
+  deploy_ec2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@main
+        with:
+            SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+            ARGS: "-rlgoDzvc -i --delete"
+            SOURCE: "ec2"
+            REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+            REMOTE_USER: ${{ secrets.REMOTE_USER }}
+            TARGET: ${{ secrets.REMOTE_TARGET }}
+            EXCLUDE: "/dist/, /node_modules/"
+            # SCRIPT_BEFORE: |
+            #   echo "Running before rsync"
+            # add this before the pull command if private repo.
+            # docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}" docker.io
+            SCRIPT_AFTER: |
+              cd ${{ secrets.REMOTE_TARGET }}
+              echo "${{ secrets.ENV_FILE }}" > .env
+              docker-compose -f docker-compose.yml pull && docker-compose -f docker-compose.yml up --remove-orphans -d
+              docker system prune --force
+              echo $RSYNC_STDOUT
