@@ -70,12 +70,7 @@ services:
   slack_chat_api:
     image: salk/chat_api:latest
     restart: unless-stopped
-    build:
-      context: ./
-      dockerfile: Dockerfile
 
-    volumes:
-      - ./:/app
 
     expose:
       - 8000
@@ -134,4 +129,4 @@ services:
 
 volumes:
   db-data:
-  rc-data:
+
