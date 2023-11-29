@@ -32,8 +32,8 @@ Again, python for options and support of ML and the official slack_bolt python p
 
 #### TODO for CICD with Github Actions
 - [x] Docker build and push workflow : https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
-- [ ] Docker-compose for ec2 *use overrides?*
-- [ ] Deploy workflow, maybe: easingthemes/ssh-deploy@main maybe https://github.com/marketplace/actions/deploy-docker-to-aws-ec2
+- [x] Docker-compose for ec2
+- [x] Deploy workflow, maybe: easingthemes/ssh-deploy@main (later https://github.com/marketplace/actions/deploy-docker-to-aws-ec2)
 
 
 
