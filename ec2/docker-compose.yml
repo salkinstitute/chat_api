@@ -74,11 +74,11 @@ services:
 
     expose:
       - 8000
-      
+
     env_file:
       - ./.env
 
-    working_dir: /app
+    working_dir: /
 
     command: "python -m app.slack.main"
 
