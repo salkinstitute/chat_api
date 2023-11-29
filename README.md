@@ -37,5 +37,5 @@ Alot of the solutions out there for RAG are good(Embedd Chain) but missing key t
    
 ### Deployment
 Not there yet, but getting close 
-(will be using EC2)
+- Stub (EC2 monolith via CICD with GitHub actions in the works)
 
